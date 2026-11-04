@@ -1,0 +1,48 @@
+; 1Panel「进程守护」里按下面字段填写即可，不需要手动改这个文件。
+; 运行用户统一 root；muse-agent 的运行目录是 /Muse/agent，其余是 /Muse。
+
+[program:muse2api]
+directory=/Muse
+command=/bin/bash /Muse/start-api.sh
+user=root
+autostart=true
+autorestart=true
+startsecs=8
+startretries=5
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/Muse/logs/muse2api.log
+stdout_logfile_maxbytes=20MB
+stdout_logfile_backups=5
+
+[program:muse-canvas]
+directory=/Muse
+command=/bin/bash /Muse/start-canvas.sh
+user=root
+autostart=true
+autorestart=true
+startsecs=3
+startretries=5
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/Muse/logs/canvas.log
+stdout_logfile_maxbytes=20MB
+stdout_logfile_backups=5
+
+[program:muse-agent]
+directory=/Muse/agent
+command=/bin/bash /Muse/agent/start-agent.sh
+user=root
+autostart=true
+autorestart=true
+startsecs=10
+startretries=5
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/Muse/logs/agent.log
+stdout_logfile_maxbytes=20MB
+stdout_logfile_backups=5
+environment=HOME="/Muse/agent"

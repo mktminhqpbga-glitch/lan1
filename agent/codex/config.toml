@@ -1,0 +1,12 @@
+# Codex 使用 DeepSeek Responses API
+model = "deepseek-flash"
+model_provider = "deepseek"
+model_catalog_json = "/Muse/agent/.codex/models.json"
+web_search = "disabled"
+show_raw_agent_reasoning = true
+
+[model_providers.deepseek]
+name = "DeepSeek"
+base_url = "https://api.deepseek.com/"
+wire_api = "responses"
+env_key = "DEEPSEEK_API_KEY"

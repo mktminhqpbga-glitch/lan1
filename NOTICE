@@ -1,0 +1,43 @@
+Muse—Canvas
+===========
+
+This repository combines and modifies two MIT-licensed upstream projects.
+
+Upstream projects
+-----------------
+
+1. muse2api
+   Author: czg86389-hub
+   Repository: https://github.com/czg86389-hub/muse2api
+   License: MIT
+   Copyright: 2026 MUSE2API Authors
+
+2. infinite-canvas
+   Author: basketikun
+   Repository: https://github.com/basketikun/infinite-canvas
+   License: MIT
+   Copyright: 2026 basketikun
+
+The full upstream license texts are retained at:
+
+- muse2api/LICENSE
+- source/infinite-canvas/LICENSE
+
+Modifications in this repository
+--------------------------------
+
+- Patched muse2api for canvas-compatible multipart video requests, multiple
+  image generations, and reference image fields.
+- Added server-side provider locking, Agent locking, and runtime config
+  injection.
+- Added canvas_server.py, install.sh, Supervisor/Nginx examples, and
+  bilingual documentation.
+
+These modifications are released under the MIT License; see LICENSE.
+
+Trademarks and services
+-----------------------
+
+Muse, DeepSeek, GitHub, and other names are trademarks of their respective
+owners. This project is not affiliated with or endorsed by them. You are
+responsible for complying with the terms of service of any service you use.

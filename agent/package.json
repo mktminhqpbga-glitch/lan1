@@ -1,0 +1,9 @@
+{
+  "name": "muse-canvas-agent-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "无限画布 Agent 服务端（Codex + DeepSeek）",
+  "dependencies": {
+    "@basketikun/canvas-agent": "0.6.0"
+  }
+}
