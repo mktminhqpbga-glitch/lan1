@@ -327,7 +327,7 @@ DeepSeek Key 无效、余额不足或复制时带了空格。重新写入并重�
 ### 安全说明
 
 - 本项目默认以 **root** 运行 Agent，Codex 具备执行命令的能力；不要把 Agent 端口裸露给不可信网络。
-- `AGENT_TOKEN` 会通过 `/config.js` 暴露给能打开画布的人；请给画布加访问控制、防火墙白名单或反向代理认证。
+- `canvas-agent.json` 里的 `token` 会通过 `/config.js` 暴露给能打开画布的人；请给画布加访问控制、防火墙白名单或反向代理认证。
 - `.env`、`canvas-agent.json`、Muse Cookie 都是敏感凭据，权限保持 `600`，不要提交到 Git。
 - 如果要把本项目公开部署，请自行增加登录、限流和审计。
 
@@ -642,7 +642,7 @@ Set Nginx read timeout ≥ 600s and tune `MUSE2API_CONCURRENCY`.
 ### Security
 
 - The Agent runs as **root** and Codex can execute commands. Do not expose `agent.example.com` to untrusted networks.
-- `AGENT_TOKEN` is embedded in `/config.js` and is visible to anyone who can open the canvas. Add access control, firewall rules, or reverse-proxy auth.
+- The `token` in `canvas-agent.json` is embedded in `/config.js` and is visible to anyone who can open the canvas. Add access control, firewall rules, or reverse-proxy auth.
 - `.env`, `canvas-agent.json`, and Muse cookies are secrets. Keep them `600` and never commit them.
 - Add login, rate limiting, and auditing before exposing this publicly.
 
