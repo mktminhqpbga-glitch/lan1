@@ -109,7 +109,10 @@ từ đĩa, không load toàn bộ file vào RAM.
 `queued` → trả ngay task JSON `{task_id, kind, model, input,
 idempotency_key, timeout_seconds}`. Hết `wait` giây không có task → `204`.
 Worker gọi lại ngay sau mỗi lần trả (kể cả 204) — nhịp này giữ relay
-thức khi đang làm việc, và là heartbeat gián tiếp.
+thức khi đang làm việc, và là heartbeat gián tiếp. **Mọi request
+`/worker/*` phải kèm header `X-Worker-Id` (một ID ổn định của worker,
+worker tự sinh một lần và giữ qua các lần khởi động) — relay dùng nó
+để biết task thuộc về worker nào; thiếu header → 400.**
 
 `GET /worker/tasks/{task_id}/inputs/{name}` — tải file input của task
 (ảnh reference cho `image_edit`). Stream.

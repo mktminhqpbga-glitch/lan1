@@ -436,18 +436,31 @@ async def mark_failed(task_id: str, request: Request,
 async def upload_result(task_id: str, request: Request,
                         worker_id: str = Depends(worker_auth)):
     content_type = request.headers.get("content-type", "")
-    if "multipart/form-data" not in content_type:
-        raise HTTPException(400, "result must be multipart/form-data")
-    form = await request.form()
-    raw = form.get("result")
-    if raw is None:
-        raise HTTPException(400, "missing result field")
-    try:
-        result = json.loads(raw)
-    except Exception:
-        raise HTTPException(400, "result field is not valid JSON")
-    files = [v for v in form.values()
-             if hasattr(v, "filename") and v.filename]
+    files: list = []
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        raw = form.get("result")
+        if raw is None:
+            raise HTTPException(400, "missing result field")
+        try:
+            result = json.loads(raw)
+        except Exception:
+            raise HTTPException(400, "result field is not valid JSON")
+        files = [v for v in form.values()
+                 if hasattr(v, "filename") and v.filename]
+    elif "application/json" in content_type:
+        # Task khong co file media (chat/responses): worker gui result
+        # dang JSON thang, khong can multipart.
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(400, "body is not valid JSON")
+        result = body.get("result")
+        if result is None:
+            raise HTTPException(400, "missing result field")
+    else:
+        raise HTTPException(
+            400, "result must be multipart/form-data or application/json")
 
     async with _lock:
         rec = _tasks.get(task_id)

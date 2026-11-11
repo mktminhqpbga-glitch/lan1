@@ -28,6 +28,7 @@ import signal
 import sys
 import threading
 import time
+import uuid
 from pathlib import Path
 
 import requests
@@ -170,6 +171,10 @@ class Journal:
         self.results_dir = results_dir
         self._lock = threading.Lock()
         self.entries: dict = {}
+        # worker_id on dinh cho tien trinh worker nay, luu cung journal de
+        # giu nguyen qua cac lan khoi dong lai (relay dung no de biet task
+        # nao thuoc ve worker nao — gui qua header X-Worker-Id).
+        self.worker_id: str = ""
         self._load()
 
     def _load(self) -> None:
@@ -178,13 +183,20 @@ class Journal:
                 data = json.loads(self.path.read_text(encoding="utf-8"))
                 if isinstance(data, dict):
                     self.entries = data.get("entries", {}) or {}
+                    wid = data.get("worker_id") or ""
+                    if isinstance(wid, str) and wid:
+                        self.worker_id = wid
             except (OSError, ValueError):
                 self.entries = {}
+        if not self.worker_id:
+            self.worker_id = "w-" + uuid.uuid4().hex[:12]
+            self._save_locked()
 
     def _save_locked(self) -> None:
         tmp = self.path.with_suffix(".json.tmp")
         tmp.write_text(
-            json.dumps({"version": 1, "entries": self.entries},
+            json.dumps({"version": 1, "worker_id": self.worker_id,
+                        "entries": self.entries},
                        ensure_ascii=False),
             encoding="utf-8",
         )
@@ -255,12 +267,15 @@ class Journal:
 # ---------------------------------------------------------------------------
 
 class RelayClient:
-    def __init__(self, cfg: Config):
+    def __init__(self, cfg: Config, worker_id: str = ""):
         self.cfg = cfg
         self.session = requests.Session()
-        self.session.headers.update(
-            {"Authorization": f"Bearer {cfg.relay_worker_key}"}
-        )
+        # Relay yeu cau ca Bearer key lan header X-Worker-Id (xem
+        # relay/README.md muc 3.3) de biet task nao thuoc ve worker nao.
+        headers = {"Authorization": f"Bearer {cfg.relay_worker_key}"}
+        if worker_id:
+            headers["X-Worker-Id"] = worker_id
+        self.session.headers.update(headers)
 
     def _check(self, resp: requests.Response, task_id: str | None = None) -> None:
         if resp.status_code == 404 and task_id:
@@ -322,26 +337,35 @@ class RelayClient:
 
     def post_result(self, task_id: str, result: dict,
                     files: list) -> None:
-        """Upload kết quả (multipart: result JSON + files). files là
-        list các Path; tên file gửi đi là tên file trên đĩa."""
-        multipart = []
-        handles = []
-        try:
-            for path in files:
-                handles.append(open(path, "rb"))
-                multipart.append(
-                    ("files", (path.name, handles[-1], _mime(path.name)))
+        """Upload kết quả. Co file media: multipart (result JSON + files).
+        Khong co file (chat/responses): gui JSON thang — relay chap nhan
+        ca hai dang (multipart chi bat buoc khi co file)."""
+        if files:
+            multipart = []
+            handles = []
+            try:
+                for path in files:
+                    handles.append(open(path, "rb"))
+                    multipart.append(
+                        ("files", (path.name, handles[-1], _mime(path.name)))
+                    )
+                resp = self.session.post(
+                    f"{self.cfg.relay_url}/worker/tasks/{task_id}/result",
+                    data={"result": json.dumps(result, ensure_ascii=False)},
+                    files=multipart,
+                    timeout=300,
                 )
+                self._check(resp, task_id)
+            finally:
+                for h in handles:
+                    h.close()
+        else:
             resp = self.session.post(
                 f"{self.cfg.relay_url}/worker/tasks/{task_id}/result",
-                data={"result": json.dumps(result, ensure_ascii=False)},
-                files=multipart or None,
+                json={"result": result},
                 timeout=300,
             )
             self._check(resp, task_id)
-        finally:
-            for h in handles:
-                h.close()
 
     def post_failed(self, task_id: str, error: str) -> None:
         resp = self.session.post(
@@ -581,9 +605,11 @@ class LocalClient:
 class Worker:
     def __init__(self, cfg: Config):
         self.cfg = cfg
-        self.relay = RelayClient(cfg)
-        self.local = LocalClient(cfg)
+        # Tao Journal truoc de lay worker_id on dinh, truyen cho RelayClient
+        # (header X-Worker-Id) truoc khi goi bat ky endpoint /worker/* nao.
         self.journal = Journal(JOURNAL_PATH, RESULTS_DIR)
+        self.relay = RelayClient(cfg, worker_id=self.journal.worker_id)
+        self.local = LocalClient(cfg)
         self.shutdown = threading.Event()
         self._current_task: str | None = None
         self._progress = {"value": 0}
