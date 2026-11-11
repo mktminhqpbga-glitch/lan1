@@ -4,7 +4,7 @@
 >
 > A self-hosted AI canvas that connects **Muse(muse.ai)** image / video / chat models to **Infinite Canvas**, with a server-side **DeepSeek + Codex Agent** that can operate the canvas.
 
-[中文](#中文) · [English](#english) · [GitHub](https://github.com/huwanbin/Muse-Canvas)
+[Tiếng Việt](README.vi.md) · [中文](#中文) · [English](#english) · [GitHub](https://github.com/huwanbin/Muse-Canvas)
 
 ---
 
