@@ -224,7 +224,8 @@
         <button class="ghost mini" onclick="saveKey()">保存</button>
       </span>
       <select id="langSel" class="langsel" data-no-i18n onchange="setLang(this.value)" title="Language / 语言">
-        <option value="zh">中文</option>
+        <option value="vi">Tiếng Việt</option>
+         <option value="zh">中文</option>
         <option value="en">English</option>
       </select>
     </div>
@@ -791,8 +792,8 @@ t = requests.post(<span class="s">"BASE/v1/videos"</span>, json={<span class="s"
  * 新增中文文案时，请在 I18N_EN（整句）或 I18N_EN_PATTERNS（含变量）里补上英文。 */
 const LANG_STORE = 'muse2api_lang';
 const LANG = (() => {
-  try { const v = localStorage.getItem(LANG_STORE); if (v === 'zh' || v === 'en') return v; } catch (e) {}
-  return /^zh\b/i.test(navigator.language || '') ? 'zh' : 'en';
+  try { const v = localStorage.getItem(LANG_STORE); if (v === 'zh' || v === 'en' || v === 'vi') return v; } catch (e) {}
+  return 'vi'; // Vietnamese is the default; the user can still choose English or Chinese.
 })();
 function setLang(v){
   try { localStorage.setItem(LANG_STORE, v); } catch (e) {}
@@ -1205,6 +1206,272 @@ const I18N_EN = {
   "✓ 会话有效，可正常生成": "✓ Session valid; generation should work",
   "✗ 保活失败: 未知错误": "✗ Keep-alive failed: unknown error",
 };
+const I18N_VI = {
+  "取消": "Huỷ",
+  "保存": "Lưu",
+  "编辑": "Sửa",
+  "删除": "Xoá",
+  "复制": "Sao chép",
+  "显示": "Hiện",
+  "隐藏": "Ẩn",
+  "刷新": "Làm mới",
+  "清空": "Xoá nội dung",
+  "加载中…": "Đang tải…",
+  "检测中…": "Đang kiểm tra…",
+  "未知": "Không rõ",
+  "操作": "Thao tác",
+  "备注": "Ghi chú",
+  "状态": "Trạng thái",
+  "账号": "Tài khoản",
+  "账号 ID": "ID tài khoản",
+  "账号标签": "Tên tài khoản",
+  "标签": "Nhãn",
+  "服务": "Dịch vụ",
+  "浏览器": "Trình duyệt",
+  "正常": "Bình thường",
+  "运行中": "Đang chạy",
+  "空闲": "Rảnh",
+  "可用": "Khả dụng",
+  "异常": "Lỗi",
+  "已禁用": "Đã tắt",
+  "已启用": "Đã bật",
+  "启用": "Bật",
+  "禁用": "Tắt",
+  "测试": "Kiểm tra",
+  "保活": "Duy trì phiên",
+  "改名": "Đổi tên",
+  "更新Cookie": "Cập nhật Cookie",
+  "代理": "Proxy",
+  "代理地址": "Địa chỉ proxy",
+  "账号代理": "Proxy của tài khoản",
+  "代理用户名（可选）": "Tên đăng nhập proxy (không bắt buộc)",
+  "代理密码": "Mật khẩu proxy",
+  "连接方式": "Kiểu kết nối",
+  "默认网络": "Mạng mặc định",
+  "指定代理": "Dùng proxy",
+  "测试已保存代理": "Kiểm tra proxy đã lưu",
+  "移除代理": "Gỡ proxy",
+  "代理未测试": "Chưa kiểm tra proxy",
+  "代理已连通": "Proxy kết nối được",
+  "代理未通过": "Proxy không đạt",
+  "代理未确认": "Chưa xác nhận proxy",
+  "代理连通：已确认": "Kết nối proxy: đã xác nhận",
+  "代理连通：未通过": "Kết nối proxy: thất bại",
+  "代理连通：未确认": "Kết nối proxy: chưa xác nhận",
+  "Muse 会话：已确认": "Phiên Muse: đã xác nhận",
+  "Muse 会话：未通过": "Phiên Muse: thất bại",
+  "Muse 会话：未确认": "Phiên Muse: chưa xác nhận",
+  "muse2api · 账号池控制台": "muse2api · Bảng quản trị tài khoản",
+  "Muse 网页额度 · 反代 API": "Hạn mức Muse · API tương thích OpenAI",
+  "GitHub 仓库": "Kho mã GitHub",
+  "版本检测": "Kiểm tra phiên bản",
+  "自动刷新": "Tự động làm mới",
+  "粘贴 m2a_ 开头的密钥": "Dán API Key bắt đầu bằng m2a_",
+  "⚡ 一键在线升级并重启": "⚡ Cập nhật và khởi động lại",
+  "⚡ 一键从 GitHub 在线更新并重启": "⚡ Cập nhật từ GitHub và khởi động lại",
+  "🔍 立即重新检测更新": "🔍 Kiểm tra cập nhật",
+  "查看更新内容": "Xem thay đổi",
+  "查看 GitHub 完整提交记录 ↗": "Xem toàn bộ lịch sử commit trên GitHub ↗",
+  "暂不提醒": "Để sau",
+  "官方仓库版本检测与在线热升级": "Kiểm tra và cập nhật phiên bản từ GitHub",
+  "检测到 muse2api 官方仓库发布了新版本更新！": "Đã có phiên bản muse2api mới!",
+  "新版本": "Phiên bản mới",
+  "账号池": "Kho tài khoản",
+  "获取 Cookie": "Lấy Cookie",
+  "任务记录": "Lịch sử tác vụ",
+  "媒体库": "Thư viện ảnh/video",
+  "接口测试": "Thử API",
+  "接入文档": "Hướng dẫn tích hợp",
+  "去重新登录": "Đăng nhập lại",
+  "接入信息": "Thông tin kết nối",
+  "下游项目填这两个值": "Dùng hai thông tin này để kết nối ứng dụng",
+  "把下面两项填进你的项目就能调用。BASE URL 就是接口地址前缀。": "Nhập hai giá trị dưới đây vào ứng dụng của bạn để gọi API. BASE URL là tiền tố địa chỉ API.",
+  "BASE URL（接口地址）": "BASE URL (địa chỉ API)",
+  "API Key（访问密钥）": "API Key (khoá truy cập)",
+  "重新生成": "Tạo lại",
+  "账号总数": "Tổng tài khoản",
+  "媒体文件": "Tệp ảnh/video",
+  "添加账号": "Thêm tài khoản",
+  "支持批量": "Hỗ trợ nhập nhiều tài khoản",
+  "账号标签（单条导入用）": "Tên tài khoản (nhập một tài khoản)",
+  "例如 muse-main": "Ví dụ: muse-main",
+  "例如 acc-01": "Ví dụ: acc-01",
+  "Cookie 字符串": "Chuỗi Cookie",
+  "导入账号": "Nhập tài khoản",
+  "账号列表": "Danh sách tài khoản",
+  "● 自动保活轮转中 (30m)": "● Tự động duy trì phiên (30 phút)",
+  "⚡ 一键保活所有账号": "⚡ Duy trì phiên tất cả tài khoản",
+  "有效期": "Hết hạn",
+  "额度": "Hạn mức",
+  "最后使用": "Dùng lần cuối",
+  "方式一：浏览器扩展": "Cách 1: Tiện ích trình duyệt",
+  "推荐 · 零命令行 · 全平台": "Đề xuất · Không cần dòng lệnh · Mọi nền tảng",
+  "下载并解压扩展": "Tải và giải nén tiện ích",
+  "⬇ 下载 muse2api-extension.zip": "⬇ Tải muse2api-extension.zip",
+  "查看包含哪些文件": "Xem các tệp có trong gói",
+  "在浏览器里加载扩展": "Cài tiện ích vào trình duyệt",
+  "以 Chrome 为例（Edge / Brave / 360 极速 等 Chromium 内核浏览器步骤类似）：": "Ví dụ với Chrome (Edge, Brave và các trình duyệt Chromium làm tương tự):",
+  "登录 muse.ai，然后点扩展图标导入": "Đăng nhập muse.ai, rồi bấm vào tiện ích để nhập Cookie",
+  "BASE URL（填进扩展）": "BASE URL (nhập vào tiện ích)",
+  "API Key（填进扩展）": "API Key (nhập vào tiện ích)",
+  "方式二：手动复制": "Cách 2: Sao chép thủ công",
+  "零安装 · 兜底": "Không cần cài đặt · Cách dự phòng",
+  "方式三：粘贴导入 / 本机脚本": "Cách 3: Dán Cookie / chạy tập lệnh",
+  "进阶": "Nâng cao",
+  "已经拿到 cookie 串的话，直接粘在这里导入（方式二手动复制的串也粘这里）。": "Nếu đã có chuỗi Cookie, bạn có thể dán vào đây để nhập.",
+  "① 下载脚本": "① Tải tập lệnh",
+  "查看源码": "Xem mã nguồn",
+  "② 运行（地址和密钥已帮你填好）": "② Chạy (đã điền địa chỉ và khoá)",
+  "正在生成命令…": "Đang tạo lệnh…",
+  "③ 在弹出的浏览器窗口里登录 muse.ai → 脚本自动抓取并上传 → 自动关窗。": "③ Đăng nhập muse.ai trên cửa sổ bật lên → tự động lấy và gửi Cookie → đóng cửa sổ.",
+  "Cookie 有效期说明": "Thời hạn Cookie",
+  "实测": "Đã kiểm tra",
+  "实测有效期": "Thời hạn thực tế",
+  "作用": "Vai trò",
+  "是": "Có",
+  "约 30 天": "Khoảng 30 ngày",
+  "约 1 年": "Khoảng 1 năm",
+  "约 2 天": "Khoảng 2 ngày",
+  "主会话，决定能不能登录": "Phiên đăng nhập chính",
+  "网关令牌": "Mã thông báo cổng kết nối",
+  "设备标识（匿名访客也有，不是登录凭证）": "Mã thiết bị (không phải thông tin đăng nhập)",
+  "生成任务记录": "Lịch sử tạo nội dung",
+  "生视频是异步任务，状态会从 queued → processing → succeeded / failed。": "Tạo video là tác vụ bất đồng bộ: queued → processing → succeeded / failed.",
+  "清空全部": "Xoá tất cả",
+  "任务 ID": "ID tác vụ",
+  "类型": "Loại",
+  "提示词": "Prompt (mô tả)",
+  "耗时": "Thời gian xử lý",
+  "创建时间": "Thời điểm tạo",
+  "结果 / 错误": "Kết quả / Lỗi",
+  "所有已生成并落盘的图片 / 视频，可直接下载或把链接给下游项目使用。": "Ảnh và video đã tạo được lưu trên máy chủ; có thể tải về hoặc dùng liên kết trong ứng dụng khác.",
+  "全选": "Chọn tất cả",
+  "删除选中 (": "Xoá mục đã chọn (",
+  "在线生图测试": "Thử tạo ảnh",
+  "真实调用 muse.ai 生成，图片约 10–30 秒返回。": "Gửi yêu cầu tạo ảnh thật tới muse.ai; thường mất khoảng 10–30 giây.",
+  "比例": "Tỷ lệ khung hình",
+  "开始生成图片": "Tạo ảnh",
+  "在线生视频测试": "Thử tạo video",
+  "异步任务，一般 60–120 秒完成，页面会自动轮询进度。": "Tác vụ bất đồng bộ, thường mất 60–120 giây. Trang sẽ tự cập nhật tiến độ.",
+  "时长(秒)": "Thời lượng (giây)",
+  "开始生成视频": "Tạo video",
+  "接入说明": "Hướng dẫn tích hợp",
+  "1. 可用模型": "1. Model hỗ trợ",
+  "模型 ID": "ID model",
+  "用途": "Mục đích",
+  "接口": "Endpoint",
+  "文本 / 代码对话（支持流式）": "Trò chuyện / lập trình (hỗ trợ streaming)",
+  "文生图 / 图像编辑": "Tạo ảnh / chỉnh sửa ảnh",
+  "文生视频 / 图生视频": "Tạo video từ văn bản / ảnh",
+  "2. 对话 / 写代码": "2. Chat / viết mã",
+  "3. 生图（curl）": "3. Tạo ảnh (curl)",
+  "4. 生视频（curl，异步）": "4. Tạo video (curl, bất đồng bộ)",
+  "5. Python（openai SDK 兼容）": "5. Python (tương thích OpenAI SDK)",
+  "6. 管理接口": "6. API quản trị",
+  "7. 鉴权": "7. Xác thực",
+  "8. 接入各类客户端 / 智能体": "8. Kết nối các ứng dụng / Agent",
+  "方法": "Phương thức",
+  "路径": "Đường dẫn",
+  "说明": "Mô tả",
+  "配置项": "Cấu hình",
+  "填什么": "Giá trị cần nhập",
+  "模型名": "Tên model",
+  "按客户端类型看能不能用": "Khả năng tương thích theo loại ứng dụng",
+  "客户端类型": "Loại ứng dụng",
+  "依赖能力": "Yêu cầu",
+  "✅ 可用": "✅ Dùng được",
+  "⚠️ 不可用": "⚠️ Không hỗ trợ",
+  "下载": "Tải xuống",
+  "打开": "Mở",
+  "开": "Bật",
+  "关": "Tắt",
+  "从未": "Chưa từng",
+  "已复制": "Đã sao chép",
+  "已复制到剪贴板": "Đã sao chép vào clipboard",
+  "没有可复制的内容": "Không có nội dung để sao chép",
+  "复制失败，请手动选中复制": "Sao chép không thành công; hãy chọn và sao chép thủ công",
+  "✓ 已登录": "✓ Đã xác thực",
+  "API Key 必填": "Cần nhập API Key",
+  "已清除 API Key": "Đã xoá API Key",
+  "API Key 已保存到本机浏览器，下次打开自动带上": "Đã lưu API Key trong trình duyệt; lần sau sẽ tự điền",
+  "API Key 未填写或填写错误": "Thiếu hoặc sai API Key",
+  "未知错误": "Lỗi không xác định",
+  "已过期": "Đã hết hạn",
+  "未记录有效期": "Chưa có hạn dùng",
+  "查询中…": "Đang kiểm tra…",
+  "读取中…": "Đang đọc…",
+  "● 可用": "● Khả dụng",
+  "● 异常": "● Lỗi",
+  "○ 未检测": "○ Chưa kiểm tra",
+  "缺核心": "Thiếu Cookie chính",
+  "缺少核心 cookie，无法生成": "Thiếu Cookie bắt buộc, không thể tạo nội dung",
+  "更新完成": "Cập nhật hoàn tất",
+  "当前已部署版本：": "Phiên bản đang chạy: ",
+  "最新仓库提交：": "Commit mới nhất: ",
+  "最新": "Mới nhất",
+  "旧版": "Bản cũ",
+  "暂无提交记录": "Chưa có commit",
+  "🔔 检测到新版本更新！": "🔔 Có phiên bản mới!",
+  "✓ 当前已是官方仓库最新版本": "✓ Đang dùng phiên bản mới nhất",
+  "待鉴权": "Chưa xác thực",
+  "待登录": "Cần đăng nhập",
+  "还没有账号。去「获取 Cookie」页签按三步导入一个": "Chưa có tài khoản. Mở tab «Lấy Cookie» để nhập tài khoản.",
+  "🔑 请先在右上角填入 API Key 并点「保存」": "🔑 Nhập API Key ở góc trên phải rồi bấm «Lưu»",
+  "请先粘贴 Cookie": "Vui lòng dán Cookie",
+  "正在真实打开 muse.ai 校验会话…": "Đang mở muse.ai để kiểm tra phiên đăng nhập…",
+  "正在为该账号执行会话静默续期…": "Đang gia hạn phiên cho tài khoản…",
+  "✓ 账号保活成功，新到期时间已更新": "✓ Duy trì phiên thành công, đã cập nhật hạn dùng",
+  "保活执行中…": "Đang duy trì phiên…",
+  "保活任务正在后台运行中，请稍候查看": "Tác vụ duy trì phiên đang chạy, hãy kiểm tra lại sau",
+  "新的账号标签：": "Tên tài khoản mới:",
+  "标签已更新": "Đã cập nhật tên tài khoản",
+  "粘贴该账号最新的 Cookie 字符串：": "Dán chuỗi Cookie mới nhất cho tài khoản này:",
+  "已删除": "Đã xoá",
+  "暂无任务记录": "Chưa có tác vụ",
+  "查看结果": "Xem kết quả",
+  "视频": "Video",
+  "图片": "Ảnh",
+  "删": "Xoá",
+  "取消全选": "Bỏ chọn tất cả",
+  "删除成功": "Đã xoá thành công",
+  "文件不存在或已被删除": "Tệp không tồn tại hoặc đã bị xoá",
+  "请先选择要删除的媒体文件": "Hãy chọn tệp cần xoá",
+  "删除中…": "Đang xoá…",
+  "还没有生成任何媒体文件": "Chưa có ảnh/video nào được tạo",
+  "勾选以批量操作": "Chọn để thao tác hàng loạt",
+  "请输入提示词": "Hãy nhập prompt",
+  "生成中…": "Đang tạo…",
+  "正在提交图片任务，生成期间会持续查询状态…": "Đang gửi tác vụ tạo ảnh; sẽ liên tục kiểm tra trạng thái…",
+  "图片生成失败": "Tạo ảnh thất bại",
+  "✓ 生成成功": "✓ Tạo thành công",
+  "✗ 生成失败": "✗ Tạo thất bại",
+  "正在创建视频任务…": "Đang tạo tác vụ video…",
+  "✗ 创建任务失败": "✗ Không thể tạo tác vụ",
+  "没有可用账号，请先在管理页面导入 cookie": "Không có tài khoản khả dụng; hãy nhập Cookie trong trang quản trị",
+  "账号不存在": "Tài khoản không tồn tại",
+  "该账号没有 cookie": "Tài khoản không có Cookie",
+  "没有可用账号": "Không có tài khoản khả dụng",
+  "会话有效": "Phiên hợp lệ",
+  "会话有效，可正常生成": "Phiên hợp lệ, có thể tạo nội dung",
+  "会话有效；额度读取失败": "Phiên hợp lệ; không đọc được hạn mức",
+  "账号额度不足": "Tài khoản đã hết hạn mức",
+  "已更新 cookie": "Đã cập nhật Cookie",
+  "免费计划": "Gói miễn phí",
+  "免費計劃": "Gói miễn phí",
+  "免费方案": "Gói miễn phí",
+  "免費方案": "Gói miễn phí",
+  "代理已保存，下次请求生效": "Đã lưu proxy, có hiệu lực từ yêu cầu tiếp theo",
+  "代理已移除，恢复默认网络": "Đã gỡ proxy, dùng mạng mặc định",
+  "正在通过已保存代理检测出口与 Muse 会话…": "Đang kiểm tra mạng và phiên Muse qua proxy đã lưu…",
+  "账号或任务正在使用中，请稍后重试 (HTTP 409)": "Tài khoản hoặc tác vụ đang bận, thử lại sau (HTTP 409)",
+  "请求过于频繁 (HTTP 429)，请稍等片刻后重试": "Gửi quá nhiều yêu cầu (HTTP 429), hãy thử lại sau",
+  "服务端内部错误 (HTTP 500)，请稍后重试或查看服务器日志": "Lỗi máy chủ (HTTP 500), thử lại sau hoặc xem log",
+  "网关超时 (HTTP 504)，上游处理时间过长，请稍后重试或调整反代超时设置": "Hết thời gian chờ gateway (HTTP 504); hãy kiểm tra timeout của reverse proxy",
+  "未解析到任何 cookie，请检查格式": "Không đọc được Cookie, hãy kiểm tra định dạng",
+  "API key 无效": "API Key không hợp lệ",
+  "缺少 Authorization: Bearer <key>": "Thiếu Authorization: Bearer <key>",
+};
+
 /* 含富文本的块：data-i18n="key" → 英文 innerHTML（须保留原有子元素的 id/class/属性） */
 const I18N_EN_HTML = {
   "extension-upgrade-notice": "<b>Important: manually upgrade the extension to 1.0.2</b><br>Updating the service does not update unpacked extensions. Replace files in the original folder and click Reload at <code>chrome://extensions</code> or <code>edge://extensions</code>, separately for each browser profile.<br><a href=\"https://github.com/czg86389-hub/muse2api/releases/download/v1.6.7/muse2api-chrome-extension-v1.6.7.zip\">Download extension 1.0.2</a>; upgrade the userscript to 1.1.2.",
@@ -1230,6 +1497,31 @@ const I18N_EN_HTML = {
   "tool-calls-hint": "\n        <b>About the \"tool calling\" limitation (important, tested):</b><br>\n        The muse.ai web assistant has an explicit alignment policy that refuses to \"output fake tool-call JSON\". Its actual reply in testing was\n        \"I won't output 'fake tool calls' in this JSON format — I don't have a get_weather tool.\"\n        Three prompt protocols with different wording and placement were tried, and all failed.<br>\n        So: <b>autonomous agent modes</b> that depend on <code>tool_calls</code> (reading/writing files, running commands, etc.) can't be supported;\n        but all <b>Q&amp;A-style</b> usage (chat, coding, explaining, translating, summarizing, images, videos) <b>works fully</b>.<br>\n        If a client sends a <code>tools</code> field anyway, the API won't error: it ignores the tool declarations and answers as a normal chat.\n      ",
   "col-enabled": "Enabled",
 };
+const I18N_VI_HTML = {
+  "extension-upgrade-notice": "<b>Quan trọng: cần cập nhật tiện ích trình duyệt lên 1.0.2</b><br>Cập nhật máy chủ không tự cập nhật tiện ích đã giải nén. Hãy thay các tệp trong thư mục tiện ích rồi bấm Reload ở <code>chrome://extensions</code> hoặc <code>edge://extensions</code>.<br><a href=\"https://github.com/czg86389-hub/muse2api/releases/download/v1.6.7/muse2api-chrome-extension-v1.6.7.zip\">Tải tiện ích 1.0.2</a>.",
+  "repo-status-desc": "Đang đối chiếu phiên bản hiện tại với kho GitHub chính thức… (quá trình cập nhật giữ lại khoá trong <code>.env</code> và dữ liệu tài khoản, ảnh/video trong <code>data/</code>)",
+  "auth-banner": "<b>Nhập API Key để tải dữ liệu</b><br><span style=\"color:var(--muted)\">Đây là khoá truy cập dịch vụ muse2api, <b>không phải</b> mật khẩu Muse. Hãy dán khoá vào ô phía trên bên phải rồi bấm «Lưu».</span>",
+  "model-names-hint": "Model: <code>muse-spark</code> (chat/mã nguồn), <code>muse-image</code> (ảnh), <code>muse-video</code> (video). Xem ví dụ trong tab «Hướng dẫn tích hợp».",
+  "add-account-hint": "Sao chép chuỗi Cookie của <b>muse.ai</b> từ trình duyệt và dán vào đây. Bắt buộc có <code>hatch_sess</code>; <code>hatch_vml</code> là tuỳ chọn. Nhập nhiều tài khoản: mỗi dòng theo định dạng <code>tên | chuỗi cookie</code>.",
+  "keepalive-hint": "Hệ thống <b>âm thầm duy trì phiên mỗi 30 phút</b> và <b>luân phiên sử dụng tài khoản công bằng (LRU)</b>. Nút «Kiểm tra» sẽ thật sự truy cập muse.ai để xác minh phiên.",
+  "ext-why-hint": "Tiện ích Chrome giúp đồng bộ <b>phiên đăng nhập muse.ai hiện có trên máy tính của bạn</b>, không cần Python hay dòng lệnh.<br>Cookie đăng nhập có thuộc tính <code>httpOnly</code>, vì vậy chỉ tiện ích dùng quyền <code>cookies</code> mới đọc được.",
+  "ext-unzip-hint": "Giải nén vào thư mục cố định, ví dụ <code>D:\\muse2api-extension</code>.",
+  "ext-load-steps": "<li>Mở <code>chrome://extensions</code> trong trình duyệt</li><li>Bật <b>Chế độ dành cho nhà phát triển</b></li><li>Chọn <b>Tải tiện ích đã giải nén</b></li><li>Chọn <b>thư mục</b> vừa giải nén</li>",
+  "ext-login-hint": "Đăng nhập <code>https://muse.ai/</code> trên trình duyệt này, bấm biểu tượng tiện ích, nhập BASE URL và API Key rồi chọn «Đọc Cookie và nhập tài khoản».",
+  "manual-copy-hint": "Nếu không dùng tiện ích, hãy sao chép Cookie từ <b>Network → Request Headers</b> trong công cụ nhà phát triển. Dòng <code>cookie:</code> chứa cả Cookie <code>httpOnly</code>.",
+  "manual-copy-steps": "<li>Đăng nhập <code>https://muse.ai/</code></li><li>Bấm <kbd>F12</kbd> và mở tab <b>Network</b></li><li>Bấm <kbd>F5</kbd> để tải lại</li><li>Chọn một yêu cầu gửi đến muse.ai</li><li>Trong <b>Headers → Request Headers</b>, sao chép dòng <code>cookie:</code> rồi dán vào ô nhập tài khoản</li>",
+  "manual-copy-warn": "Chỉ sao chép dòng <code>cookie:</code> trong <b>Request Headers</b>, không phải <code>set-cookie</code> trong Response Headers.",
+  "cli-script-hint": "Bạn có thể sử dụng tập lệnh này để đăng nhập bằng trình duyệt riêng. Chỉ dùng thư viện chuẩn Python, <b>không cần cài thêm gói pip</b>.",
+  "vml-role": "Mã thông báo không gian làm việc tuỳ chọn; <b>không bắt buộc để nhập</b>",
+  "lifetime-hint": "Hiệu lực phiên phụ thuộc xác thực từ Muse. <code>hatch_vml</code> có thể không có hoặc được cấp lại. Hãy dùng nút «Kiểm tra» sau khi nhập tài khoản; nếu Muse trả về HTTP 401, hãy đăng nhập và nhập Cookie mới.",
+  "docs-intro": "API tương thích OpenAI. Ứng dụng chỉ cần cấu hình <code>base_url</code> và <code>api_key</code>.<br>BASE URL: <code id=\"dBase\">—</code>",
+  "models-hint": "Các năng lực gồm <b>Muse Spark</b> (văn bản/mã nguồn), <b>Muse Image</b> (ảnh), <b>Muse Video</b> (video). muse.ai tự chọn model theo yêu cầu; trường <code>model</code> phục vụ tương thích API.",
+  "auth-hint": "Ngoại trừ <code>/healthz</code>, <code>/readyz</code> và <code>/v1/media/*</code>, các endpoint cần <code>Authorization: Bearer &lt;API Key&gt;</code>.",
+  "model-alias-hint": "<b>Hỗ trợ tên model thay thế</b>: ví dụ <code>gpt-4o</code>, <code>deepseek-chat</code>, <code>gemini-2.5-pro</code> được tự động ánh xạ theo năng lực. Tên không biết sẽ được giữ nguyên.",
+  "tool-calls-hint": "<b>Lưu ý về tool calling:</b> trợ lý Muse trên web có thể từ chối trả kết quả mô phỏng lời gọi công cụ. Vì thế không nên coi dịch vụ này là API tool calling đầy đủ cho Agent tự động.",
+  "col-enabled": "Đã bật",
+};
+
 /* 含变量的文案：[正则源码, 替换串]，按顺序匹配整段文本 */
 const I18N_EN_PATTERNS = ([
   ["账号代理请求失败 \\((.*?)\\)；请检查代理连接或认证，未回退直连", "Account proxy request failed ($1); check the proxy connection or credentials. Direct fallback was not used"],
@@ -1343,9 +1635,11 @@ const I18N_EN_PATTERNS = ([
 const HAN_RE = /[㐀-鿿！-～　-〿]/;
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 function t(s, depth = 0){
-  if (LANG !== 'en' || typeof s !== 'string' || !HAN_RE.test(s) || depth > 4) return s;
+  if (LANG === 'zh' || typeof s !== 'string' || !HAN_RE.test(s) || depth > 4) return s;
   const k = s.trim();
-  if (hasOwn(I18N_EN, k)) return s.replace(k, () => I18N_EN[k]);
+  const dict = LANG === 'vi' ? I18N_VI : I18N_EN;
+  if (hasOwn(dict, k)) return s.replace(k, () => dict[k]);
+  if (LANG === 'vi' && hasOwn(I18N_EN, k)) return s.replace(k, () => I18N_EN[k]);
   for (const [re, rep] of I18N_EN_PATTERNS) {
     if (!re.test(k)) continue;
     // 捕获组（多为嵌套的服务端消息）也递归翻译
@@ -1358,7 +1652,7 @@ function t(s, depth = 0){
 const I18N_ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
 const I18N_SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA']);
 function translateTree(root){
-  if (LANG !== 'en' || !root) return;
+  if (LANG === 'zh' || !root) return;
   if (root.nodeType === 3) {
     const p = root.parentElement;
     if (p && !I18N_SKIP.has(p.tagName) && !p.closest('[data-no-i18n]')) {
@@ -1371,7 +1665,7 @@ function translateTree(root){
   const blocks = root.matches('[data-i18n]') ? [root] : [];
   blocks.push(...root.querySelectorAll('[data-i18n]'));
   for (const el of blocks) {
-    const html = I18N_EN_HTML[el.dataset.i18n];
+    const html = (LANG === 'vi' ? I18N_VI_HTML[el.dataset.i18n] : null) || I18N_EN_HTML[el.dataset.i18n];
     if (html && !el.dataset.i18nDone) { el.innerHTML = html; el.dataset.i18nDone = '1'; }
   }
   for (const el of [root, ...root.querySelectorAll('*')]) {
@@ -1390,8 +1684,8 @@ function translateTree(root){
   nodes.forEach(translateTree);
 }
 document.getElementById('langSel').value = LANG;
-if (LANG === 'en') {
-  document.documentElement.lang = 'en';
+if (LANG !== 'zh') {
+  document.documentElement.lang = LANG;
   document.title = t(document.title);
   translateTree(document.body);
   new MutationObserver(muts => {

@@ -16,8 +16,8 @@ const ESSENTIAL = ['hatch_sess'];
  * 新增中文文案时，请在 I18N_EN（整句，可含 {name} 占位符）或 I18N_EN_PATTERNS（服务端返回的含变量文案）里补上英文。 */
 const LANG_STORE = 'muse2api_lang';
 const LANG = (() => {
-  try { const v = localStorage.getItem(LANG_STORE); if (v === 'zh' || v === 'en') return v; } catch (e) {}
-  return /^zh\b/i.test(navigator.language || '') ? 'zh' : 'en';
+  try { const v = localStorage.getItem(LANG_STORE); if (v === 'zh' || v === 'en' || v === 'vi') return v; } catch (e) {}
+  return 'vi'; // Giao diện mặc định bằng tiếng Việt; vẫn có thể chọn 中文 hoặc English.
 })();
 function setLang(v) {
   try { localStorage.setItem(LANG_STORE, v); } catch (e) {}
@@ -59,6 +59,31 @@ const I18N_EN = {
   'API key 无效': 'Invalid API key',
 };
 
+const I18N_VI = {
+  "Muse2API Cookie 导入": "Nhập Cookie Muse2API",
+  "把当前浏览器里 muse.ai 的登录态，一键同步到你的 muse2api 服务。": "Đồng bộ trạng thái đăng nhập muse.ai từ trình duyệt này sang máy chủ muse2api chỉ với một lần bấm.",
+  "服务地址（BASE URL）": "Địa chỉ máy chủ (BASE URL)",
+  "账号标签（可留空）": "Tên tài khoản (có thể bỏ trống)",
+  "例如 muse-main": "Ví dụ: muse-main",
+  "读取并导入": "Đọc Cookie và nhập tài khoản",
+  "请先填服务地址": "Vui lòng nhập địa chỉ máy chủ",
+  "请先填 API Key": "Vui lòng nhập API Key",
+  "正在读取 muse.ai 的 Cookie…": "Đang đọc Cookie của muse.ai…",
+  "没读到 muse.ai 的 Cookie。\n请先在这个浏览器里打开并登录 https://muse.ai/ ，再回来点一次。": "Không tìm thấy Cookie của muse.ai.\nHãy đăng nhập https://muse.ai/ trên trình duyệt này rồi thử lại.",
+  "读到 {n} 条 Cookie，但缺核心项：{missing}\n未读到登录会话，请检查当前浏览器的登录状态和扩展权限。": "Đã đọc {n} Cookie nhưng thiếu mục bắt buộc: {missing}\nKhông tìm thấy phiên đăng nhập. Hãy kiểm tra đăng nhập và quyền của tiện ích.",
+  "读到 {n} 条 Cookie，正在上传到 {base} …": "Đã đọc {n} Cookie, đang gửi đến {base}…",
+  "API Key 不对（服务返回 401）。\n请到管理页「账号池」页顶部复制正确的 API Key。": "API Key không chính xác (máy chủ trả về 401).\nHãy sao chép API Key ở đầu tab «Kho tài khoản» trong trang quản trị.",
+  "导入失败：HTTP {status}\n{body}": "Nhập tài khoản thất bại: HTTP {status}\n{body}",
+  "(自动)": "(tự động)",
+  "未知": "Không rõ",
+  "✓ 导入成功\n账号标签：{label}\n账号 ID：{id}\nCookie 条数：{count}\n有效期到：{expires}\n": "✓ Nhập tài khoản thành công\nTên tài khoản: {label}\nID tài khoản: {id}\nSố Cookie: {count}\nCó hiệu lực đến: {expires}\n",
+  "\n注意：{warning}": "\nLưu ý: {warning}",
+  "出错了：{msg}\n\n常见原因：\n· 服务地址填错或服务没启动\n· 这个地址不是 https（或证书不被信任）\n· 浏览器拦截了跨域请求": "Đã xảy ra lỗi: {msg}\n\nNguyên nhân thường gặp:\n· Sai địa chỉ máy chủ hoặc máy chủ chưa chạy\n· Địa chỉ không dùng HTTPS (hoặc chứng chỉ không được tin cậy)\n· Trình duyệt chặn yêu cầu khác nguồn",
+  "未解析到任何 cookie，请检查格式": "Không đọc được Cookie nào, hãy kiểm tra định dạng",
+  "缺少 Authorization: Bearer <key>": "Thiếu Authorization: Bearer <key>",
+  "API key 无效": "API Key không hợp lệ",
+};
+
 /* 含富文本的块：data-i18n="key" → 英文 innerHTML */
 const I18N_EN_HTML = {
   steps: '<b>Before you start, check two things:</b><br>\n'
@@ -75,11 +100,27 @@ const I18N_EN_PATTERNS = [
   [/^缺少核心 cookie：(.*)，该账号可能无法生成$/s, 'Missing core cookies: $1; this account may not be able to generate'],
 ];
 
+const I18N_VI_HTML = {
+  steps: '<b>Trước khi bắt đầu, hãy kiểm tra:</b><br>'
+    + '1. Bạn đã đăng nhập <a href="https://muse.ai/" target="_blank" style="color:#4f8cff">muse.ai</a> trên <b>trình duyệt này</b>.<br>'
+    + '2. Bạn đã điền địa chỉ máy chủ và API Key (sao chép từ tab «Kho tài khoản» trong trang quản trị muse2api).',
+  foot: 'Tiện ích chỉ sử dụng API <code>chrome.cookies</code> của trình duyệt để đọc Cookie của muse.ai '
+    + '(kể cả Cookie httpOnly), rồi gửi đến địa chỉ máy chủ <b>do bạn nhập</b>. '
+    + 'Không gửi dữ liệu đến máy chủ bên thứ ba.',
+};
+
+const I18N_VI_PATTERNS = [
+  [/^缺少核心 cookie：(.*)，该账号可能无法生成$/s, 'Thiếu Cookie bắt buộc: $1; tài khoản này có thể không tạo được nội dung'],
+];
+
 function t(s, vars) {
   let out = s;
-  if (LANG === 'en' && typeof s === 'string') {
-    if (Object.prototype.hasOwnProperty.call(I18N_EN, s)) out = I18N_EN[s];
-    else for (const [re, rep] of I18N_EN_PATTERNS) if (re.test(s)) { out = s.replace(re, rep); break; }
+  if ((LANG === 'en' || LANG === 'vi') && typeof s === 'string') {
+    const dict = LANG === 'vi' ? I18N_VI : I18N_EN;
+    const patterns = LANG === 'vi' ? I18N_VI_PATTERNS : I18N_EN_PATTERNS;
+    if (Object.prototype.hasOwnProperty.call(dict, s)) out = dict[s];
+    else if (LANG === 'vi' && Object.prototype.hasOwnProperty.call(I18N_EN, s)) out = I18N_EN[s];
+    else for (const [re, rep] of patterns) if (re.test(s)) { out = s.replace(re, rep); break; }
   }
   if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
   return out;
@@ -87,11 +128,12 @@ function t(s, vars) {
 
 function applyLang() {
   $('langSel').value = LANG;
-  if (LANG !== 'en') return;
-  document.documentElement.lang = 'en';
+  if (LANG === 'zh') return;
+  document.documentElement.lang = LANG;
   document.title = t(document.title);
+  const htmlDict = LANG === 'vi' ? I18N_VI_HTML : I18N_EN_HTML;
   document.querySelectorAll('[data-i18n]').forEach((el) => {
-    const html = I18N_EN_HTML[el.dataset.i18n];
+    const html = htmlDict[el.dataset.i18n];
     if (html) el.innerHTML = html;
   });
   document.querySelectorAll('[data-i18n-text]').forEach((el) => {

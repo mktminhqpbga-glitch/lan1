@@ -32,8 +32,15 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
     const gitHubClassName = "size-7 text-base";
     const gitHubStyle = iconStyle;
     const locale = i18n.resolvedLanguage as AppLocale;
-    const nextLocale = locale === "zh-CN" ? "en-US" : "zh-CN";
-    const languageLabel = t("topNav.switchLanguage", { language: t(nextLocale === "zh-CN" ? "locale.zhCN" : "locale.enUS") });
+    const localeCycle: AppLocale[] = ["vi-VN", "en-US", "zh-CN"];
+    const index = localeCycle.indexOf(locale);
+    const nextLocale: AppLocale = localeCycle[(index + 1) % localeCycle.length] ?? "vi-VN";
+    const localeKeys: Record<AppLocale, string> = {
+        "vi-VN": "locale.viVN",
+        "en-US": "locale.enUS",
+        "zh-CN": "locale.zhCN",
+    };
+    const languageLabel = t("topNav.switchLanguage", { language: t(localeKeys[nextLocale]) });
 
     return (
         <div className="inline-flex shrink-0 items-center gap-1">
@@ -52,7 +59,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
             ) : null}
             <Tooltip title={languageLabel} mouseEnterDelay={0.2}>
                 <button type="button" className={`${naturalIconClass} text-[11px] font-semibold tracking-tight`} style={iconStyle} onClick={() => void changeAppLocale(nextLocale)} aria-label={languageLabel}>
-                    {locale === "zh-CN" ? "中" : "EN"}
+                    {locale === "zh-CN" ? "中" : locale === "vi-VN" ? "VI" : "EN"}
                 </button>
             </Tooltip>
             <AnimatedThemeToggler theme={theme} onThemeChange={setTheme} className={naturalIconClass} style={iconStyle} aria-label={t(theme === "dark" ? "topNav.lightTheme" : "topNav.darkTheme")} title={t(theme === "dark" ? "topNav.lightTheme" : "topNav.darkTheme")} />
