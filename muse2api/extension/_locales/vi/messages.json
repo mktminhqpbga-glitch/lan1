@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Nhập Cookie Muse2API",
+    "description": "Tên tiện ích"
+  },
+  "extDesc": {
+    "message": "Đồng bộ Cookie đăng nhập muse.ai từ trình duyệt vào máy chủ muse2api chỉ với một lần bấm.",
+    "description": "Mô tả tiện ích"
+  }
+}
