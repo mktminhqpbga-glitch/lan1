@@ -238,7 +238,27 @@ xóa hết. Cơ chế phục hồi:
   `images`) được chuyển tiếp. Text-to-video và video có ảnh reference
   vẫn hoạt động.
 
-## 8. Cấu trúc file
+## 8. Đóng gói Bridge thành app macOS (sẵn sàng, chưa build app)
+
+Bridge được thiết kế từ đầu để đóng gói cùng ứng dụng Canvas
+(`.app`/`.dmg`) — xem `relay/bridge/INTEGRATION.md` (tài liệu cho Codex):
+
+- Chạy dưới dạng tiến trình con của app, không cần Terminal.
+- Cổng động: `--port 0` (hệ điều hành chọn cổng trống) + báo cổng thực
+  tế qua dòng JSON `bridge_ready` trên stdout và file `--ready-file`.
+- Tự tắt khi app thoát: SIGTERM/SIGINT + watchdog (cha chết → tắt).
+- Tự kết nối lại relay: retry tới 120 giây khi relay Free đang ngủ.
+- Khóa qua Keychain: app đọc `RELAY_CANVAS_KEY` từ Keychain, truyền
+  qua biến môi trường cho Bridge; không nhúng khóa vào frontend hay
+  bundle. Thứ tự ưu tiên cấu hình: CLI > env > `.env`.
+- Khôi phục task khi mở lại app: journal local `bridge-tasks.json`
+  trong `--data-dir` + endpoint nội bộ `GET /bridge/tasks`,
+  `GET /bridge/tasks/{id}`; kết quả trên relay giữ 24 giờ.
+- Không phụ thuộc đường dẫn tuyệt đối hay Python cài sẵn: Bridge chỉ
+  dùng stdlib, đóng gói bằng PyInstaller onefile hoặc Python.framework
+  nhúng trong app.
+
+## 9. Cấu trúc file
 
 ```
 relay/
@@ -254,6 +274,7 @@ relay/
   bridge/
     bridge.py          # bridge Mac (chỉ dùng stdlib, không cần pip)
     README.md          # cách chạy trên Mac + cấu hình Canvas
+    INTEGRATION.md     # tich hop bridge vao app macOS (.app/.dmg) — cho Codex
     .env.example
 render.yaml            # Blueprint: 1 web service Docker, Free, Singapore
 ```

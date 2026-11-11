@@ -72,6 +72,10 @@ POLL_INTERVAL = 3.0        # giay giua cac lan hoi relay
 MAX_RECREATES = 3          # so lan tao lai task khi relay tra 404 (mat task)
 RELAY_HTTP_TIMEOUT = 30    # timeout moi lan goi HTTP len relay (giay)
 MEDIA_HTTP_TIMEOUT = 300   # timeout khi tai media (file lon, mang cham)
+RELAY_WAKE_DEADLINE = 120  # so giay toi da retry khi relay dang ngu (Render Free
+                           # mat 30-60s de danh thuc); tao task co
+                           # idempotency_key nen retry POST la an toan
+JOURNAL_MAX_TASKS = 200    # so task toi da giu trong journal local
 MAX_JSON_BODY = 32 * 1024 * 1024       # 32 MB cho body JSON
 MAX_MULTIPART_TOTAL = 512 * 1024 * 1024  # 512 MB cho body multipart
 MAX_TEXT_FIELD = 4 * 1024 * 1024       # 4 MB cho mot field text trong form
@@ -123,19 +127,30 @@ def _parse_env_file(path: str) -> dict:
 
 
 class Config:
-    def __init__(self, env_path: str | None, host: str | None, port: int | None):
+    def __init__(self, env_path: str | None, host: str | None,
+                 port: int | None, data_dir: str | None = None,
+                 parent_pid: int | None = None,
+                 ready_file: str | None = None):
         values: dict = {}
         if env_path and os.path.exists(env_path):
             values.update(_parse_env_file(env_path))
         # Bien moi truong thang file .env.
-        for key in ("RELAY_URL", "RELAY_CANVAS_KEY", "BRIDGE_HOST", "BRIDGE_PORT"):
+        for key in ("RELAY_URL", "RELAY_CANVAS_KEY", "BRIDGE_HOST",
+                    "BRIDGE_PORT", "BRIDGE_DATA_DIR", "BRIDGE_PARENT_PID",
+                    "BRIDGE_READY_FILE"):
             if os.environ.get(key):
                 values[key] = os.environ[key]
         # Co tham so dong lenh thang ca hai.
         if host:
             values["BRIDGE_HOST"] = host
-        if port:
+        if port is not None:
             values["BRIDGE_PORT"] = str(port)
+        if data_dir:
+            values["BRIDGE_DATA_DIR"] = data_dir
+        if parent_pid is not None:
+            values["BRIDGE_PARENT_PID"] = str(parent_pid)
+        if ready_file:
+            values["BRIDGE_READY_FILE"] = ready_file
 
         relay_url = (values.get("RELAY_URL") or "").strip().rstrip("/")
         if not relay_url or not relay_url.startswith(("http://", "https://")):
@@ -152,6 +167,115 @@ class Config:
             self.port = int(values.get("BRIDGE_PORT") or 5522)
         except ValueError:
             raise SystemExit("BRIDGE_PORT phai la so cong.")
+        if not 0 <= self.port <= 65535:
+            raise SystemExit("BRIDGE_PORT phai trong khoang 0-65535 "
+                             "(0 = he dieu hanh chon cong trong).")
+        # Thu muc du lieu: mac dinh la thu muc chua script (khi dong goi
+        # thanh app, truyen --data-dir toi Application Support cua app).
+        # Khong dung duong dan tuyet doi cung, khong dung CWD.
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.data_dir = (values.get("BRIDGE_DATA_DIR") or script_dir).strip()
+        try:
+            self.parent_pid = int(values.get("BRIDGE_PARENT_PID") or 0) or None
+        except ValueError:
+            raise SystemExit("BRIDGE_PARENT_PID phai la so PID.")
+        self.ready_file = (values.get("BRIDGE_READY_FILE") or "").strip() or None
+
+
+# ---------------------------------------------------------------------------
+# Journal task local — de app mo lai co the truy van / khoi phuc task
+# ---------------------------------------------------------------------------
+
+class TaskJournal:
+    """Ghi lai task bridge da gui len relay (chi id/kind/trang thai —
+    khong luu prompt, khong luu secret). File nam trong data_dir de app
+    dong goi co the chi toi Application Support cua no."""
+
+    def __init__(self, data_dir: str):
+        self.path = os.path.join(data_dir, "bridge-tasks.json")
+        self._lock = threading.Lock()
+        self._tasks: dict[str, dict] = {}
+        try:
+            with open(self.path, encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                for item in data:
+                    if isinstance(item, dict) and item.get("task_id"):
+                        self._tasks[item["task_id"]] = item
+        except (OSError, ValueError):
+            pass
+
+    def _save(self) -> None:
+        try:
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            items = sorted(self._tasks.values(),
+                           key=lambda t: t.get("created_at", 0),
+                           reverse=True)[:JOURNAL_MAX_TASKS]
+            tmp = self.path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(items, f, ensure_ascii=False)
+            os.replace(tmp, self.path)
+        except OSError:
+            pass
+
+    def record(self, task_id: str, kind: str, model: str) -> None:
+        with self._lock:
+            now = int(time.time())
+            self._tasks[task_id] = {
+                "task_id": task_id, "kind": kind, "model": model,
+                "status": "submitted",
+                "created_at": now, "updated_at": now,
+            }
+            self._save()
+
+    def update(self, task_id: str, status: str) -> None:
+        with self._lock:
+            entry = self._tasks.get(task_id)
+            if entry is None:
+                return
+            entry["status"] = status
+            entry["updated_at"] = int(time.time())
+            self._save()
+
+    def all(self) -> list:
+        with self._lock:
+            return sorted(self._tasks.values(),
+                          key=lambda t: t.get("created_at", 0), reverse=True)
+
+    def get(self, task_id: str) -> dict | None:
+        with self._lock:
+            return self._tasks.get(task_id)
+
+
+def _is_transient_relay_error(exc: Exception) -> bool:
+    """Loi tam thoi dang retry: mang hong, relay dang ngu/dang khoi dong."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return exc.code in (502, 503, 504)
+    return isinstance(exc, (urllib.error.URLError, http.client.HTTPException,
+                            OSError, TimeoutError, ConnectionError))
+
+
+def _call_with_relay_retry(fn, what: str):
+    """Chay fn(), retry khi gap loi tam thoi cho toi het RELAY_WAKE_DEADLINE
+    (relay Free mat 30-60s de danh thuc sau khi ngu). Het han thi doi
+    loi ket noi thanh RelayError de handler tra 502 sach se."""
+    deadline = time.monotonic() + RELAY_WAKE_DEADLINE
+    delay = 2.0
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            return fn()
+        except Exception as exc:
+            if not _is_transient_relay_error(exc) \
+                    or time.monotonic() >= deadline:
+                if _is_transient_relay_error(exc):
+                    raise RelayError(f"Khong noi duoc relay ({what}): {exc}")
+                raise
+            log(f"relay {what} loi tam thoi ({exc}), thu lai sau {delay:.0f}s "
+                f"(lan {attempt})")
+            time.sleep(delay)
+            delay = min(delay * 1.5 + 1, 30.0)
 
 
 # ---------------------------------------------------------------------------
@@ -159,9 +283,22 @@ class Config:
 # ---------------------------------------------------------------------------
 
 class RelayClient:
-    def __init__(self, base_url: str, canvas_key: str):
+    def __init__(self, base_url: str, canvas_key: str,
+                 journal: TaskJournal | None = None):
         self.base_url = base_url
         self.key = canvas_key
+        self.journal = journal
+
+    def health_check(self, timeout: float = 5.0) -> bool:
+        """Kiem tra relay co song khong (chi de log luc khoi dong —
+        relay ngu thi van khoi dong bridge binh thuong)."""
+        try:
+            req = urllib.request.Request(self.base_url + "/healthz",
+                                         method="GET")
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.status == 200
+        except Exception:
+            return False
 
     def _headers(self, content_type: str | None = None) -> dict:
         headers = {"Authorization": "Bearer " + self.key}
@@ -194,14 +331,18 @@ class RelayClient:
         req = urllib.request.Request(
             self.base_url + "/v1/tasks", data=body, method="POST",
             headers=self._headers("application/json"))
-        try:
-            with urllib.request.urlopen(req, timeout=RELAY_HTTP_TIMEOUT) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            raise RelayError(f"Relay tu choi tao task: {self._read_error(e)}",
-                             status=e.code)
-        except urllib.error.URLError as e:
-            raise RelayError(f"Khong noi duoc relay: {e.reason}")
+
+        def _do():
+            try:
+                with urllib.request.urlopen(req, timeout=RELAY_HTTP_TIMEOUT) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
+            except urllib.error.HTTPError as e:
+                raise RelayError(f"Relay tu choi tao task: {self._read_error(e)}",
+                                 status=e.code)
+        result = _call_with_relay_retry(_do, "tao task")
+        if self.journal and result.get("task_id"):
+            self.journal.record(result["task_id"], kind, model)
+        return result
 
     def create_task_multipart(self, kind: str, model: str,
                               task_input: dict, idempotency_key: str,
@@ -234,52 +375,62 @@ class RelayClient:
             parts.append((headers, f))
         body = _MultipartBody(boundary.encode("ascii"), parts)
 
-        parsed = urllib.parse.urlparse(self.base_url)
-        use_https = parsed.scheme == "https"
-        port = parsed.port or (443 if use_https else 80)
-        conn_cls = http.client.HTTPSConnection if use_https \
-            else http.client.HTTPConnection
-        conn = conn_cls(parsed.hostname, port, timeout=RELAY_HTTP_TIMEOUT)
-        try:
-            conn.putrequest("POST", (parsed.path or "") + "/v1/tasks")
-            conn.putheader("Content-Type",
-                           f"multipart/form-data; boundary={boundary}")
-            conn.putheader("Content-Length", str(body.total))
-            conn.putheader("Authorization", "Bearer " + self.key)
-            conn.endheaders()
-            while True:
-                chunk = body.read(CHUNK)
-                if not chunk:
-                    break
-                conn.send(chunk)
-            resp = conn.getresponse()
-            raw = resp.read()
-            if resp.status not in (200, 201, 202):
-                raise RelayError(
-                    f"Relay tu choi tao task (HTTP {resp.status}): "
-                    f"{raw.decode('utf-8', 'replace')[:300]}",
-                    status=resp.status)
-            return json.loads(raw.decode("utf-8"))
-        except (http.client.HTTPException, OSError) as e:
-            raise RelayError(f"Khong noi duoc relay: {e}")
-        finally:
-            conn.close()
+        def _do():
+            body.rewind()
+            parsed = urllib.parse.urlparse(self.base_url)
+            use_https = parsed.scheme == "https"
+            port = parsed.port or (443 if use_https else 80)
+            conn_cls = http.client.HTTPSConnection if use_https \
+                else http.client.HTTPConnection
+            conn = conn_cls(parsed.hostname, port, timeout=RELAY_HTTP_TIMEOUT)
+            try:
+                conn.putrequest("POST", (parsed.path or "") + "/v1/tasks")
+                conn.putheader("Content-Type",
+                               f"multipart/form-data; boundary={boundary}")
+                conn.putheader("Content-Length", str(body.total))
+                conn.putheader("Authorization", "Bearer " + self.key)
+                conn.endheaders()
+                while True:
+                    chunk = body.read(CHUNK)
+                    if not chunk:
+                        break
+                    conn.send(chunk)
+                resp = conn.getresponse()
+                raw = resp.read()
+                if resp.status not in (200, 201, 202):
+                    raise RelayError(
+                        f"Relay tu choi tao task (HTTP {resp.status}): "
+                        f"{raw.decode('utf-8', 'replace')[:300]}",
+                        status=resp.status)
+                return json.loads(raw.decode("utf-8"))
+            finally:
+                conn.close()
+
+        result = _call_with_relay_retry(_do, "tao task (multipart)")
+        if self.journal and result.get("task_id"):
+            self.journal.record(result["task_id"], kind, model)
+        return result
 
     def get_task(self, task_id: str) -> tuple[int, dict | None]:
         """GET /v1/tasks/{id}. Tra (status, dict|None). 404 = task da mat."""
         req = urllib.request.Request(
             self.base_url + "/v1/tasks/" + urllib.parse.quote(task_id),
             method="GET", headers=self._headers())
-        try:
-            with urllib.request.urlopen(req, timeout=RELAY_HTTP_TIMEOUT) as resp:
-                return resp.status, json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                return 404, None
-            raise RelayError(f"Relay loi khi hoi task: {self._read_error(e)}",
-                             status=e.code)
-        except urllib.error.URLError as e:
-            raise RelayError(f"Khong noi duoc relay: {e.reason}")
+
+        def _do():
+            try:
+                with urllib.request.urlopen(req, timeout=RELAY_HTTP_TIMEOUT) as resp:
+                    return resp.status, json.loads(resp.read().decode("utf-8"))
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    return 404, None
+                raise RelayError(f"Relay loi khi hoi task: {self._read_error(e)}",
+                                 status=e.code)
+        status, data = _call_with_relay_retry(_do, "hoi task")
+        if self.journal and data and data.get("status") in (
+                "completed", "failed", "timeout"):
+            self.journal.update(task_id, data["status"])
+        return status, data
 
     def ack_task(self, task_id: str) -> None:
         """POST /v1/tasks/{id}/ack (best effort — loi thi bo qua)."""
@@ -540,6 +691,13 @@ class _MultipartBody:
         self._idx = 0
         self._buf = b""
         self._file: _SpoolFile | None = None
+        self._file_remaining = 0
+
+    def rewind(self) -> None:
+        """Dua body ve dau de gui lai (khi retry tao task multipart)."""
+        self._idx = 0
+        self._buf = b""
+        self._file = None
         self._file_remaining = 0
 
     def read(self, n: int = CHUNK) -> bytes:
@@ -847,6 +1005,27 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
         if path == "/healthz":
             self._send_json(200, {"status": "ok"})
             return
+        # Endpoint noi bo cho app (chi nghe tren localhost): liet ke va
+        # truy van task tu journal local — app mo lai dung de khoi phuc.
+        # Khong nam trong giao thuc Canvas, khong can Bearer key cua Canvas.
+        if path == "/bridge/tasks":
+            self._send_json(200, {"tasks": self.server.journal.all()})
+            return
+        m = re.fullmatch(r"/bridge/tasks/([^/]+)", path)
+        if m:
+            task_id = m.group(1)
+            status, task = self.relay.get_task(task_id)
+            if status == 404:
+                entry = self.server.journal.get(task_id)
+                if entry is None:
+                    raise BridgeError(404, "Task not found")
+                self._send_json(200, {"task_id": task_id,
+                                      "status": entry["status"],
+                                      "journal_only": True,
+                                      "entry": entry})
+                return
+            self._send_json(200, task)
+            return
         self._require_auth()
         if path == "/v1/models":
             self._send_json(200, {"object": "list", "data": MODELS})
@@ -1121,7 +1300,9 @@ class BridgeServer(http.server.ThreadingHTTPServer):
     def __init__(self, address, handler, config: Config):
         super().__init__(address, handler)
         self.config = config
-        self.relay = RelayClient(config.relay_url, config.canvas_key)
+        self.journal = TaskJournal(config.data_dir)
+        self.relay = RelayClient(config.relay_url, config.canvas_key,
+                                 journal=self.journal)
 
 
 # ---------------------------------------------------------------------------
@@ -1138,7 +1319,19 @@ def main(argv: list | None = None) -> int:
     parser.add_argument("--host", default=None,
                         help="Host de lang nghe (mac dinh 127.0.0.1)")
     parser.add_argument("--port", type=int, default=None,
-                        help="Cong de lang nghe (mac dinh 5522)")
+                        help="Cong de lang nghe (mac dinh 5522; 0 = he dieu "
+                             "hanh chon cong trong, dung cho app dong goi)")
+    parser.add_argument("--data-dir", default=None,
+                        help="Thu muc du lieu (journal task). Mac dinh: thu "
+                             "muc chua script. App dong goi nen truyen "
+                             "Application Support cua no.")
+    parser.add_argument("--parent-pid", type=int, default=None,
+                        help="PID cua tien trinh cha (app). Bridge tu tat "
+                             "khi cha chet. App dong goi phai truyen co nay; "
+                             "chay standalone thi khong can.")
+    parser.add_argument("--ready-file", default=None,
+                        help="Ghi file JSON {host, port, url} khi bridge "
+                             "da lang nghe xong, de app doc cong thuc te.")
     args = parser.parse_args(argv)
 
     env_path = args.env
@@ -1146,16 +1339,43 @@ def main(argv: list | None = None) -> int:
         env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 ".env")
     try:
-        cfg = Config(env_path, args.host, args.port)
+        cfg = Config(env_path, args.host, args.port,
+                     data_dir=args.data_dir, parent_pid=args.parent_pid,
+                     ready_file=args.ready_file)
     except SystemExit as e:
         print(f"bridge: {e}", file=sys.stderr)
         return 2
 
     server = BridgeServer((cfg.host, cfg.port), BridgeHandler, cfg)
-    log(f"bridge listening on http://{cfg.host}:{cfg.port} "
+    actual_port = server.server_address[1]
+    ready = {"event": "bridge_ready", "host": cfg.host,
+             "port": actual_port,
+             "url": f"http://{cfg.host}:{actual_port}"}
+    # Dong ready cho app doc: 1 dong JSON ra stdout + file neu co cau hinh.
+    print(json.dumps(ready), flush=True)
+    if cfg.ready_file:
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(cfg.ready_file))
+                        or ".", exist_ok=True)
+            tmp = cfg.ready_file + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(ready, f)
+            os.replace(tmp, cfg.ready_file)
+        except OSError as e:
+            log(f"khong ghi duoc ready-file {cfg.ready_file}: {e}")
+    log(f"bridge listening on http://{cfg.host}:{actual_port} "
         f"-> relay {cfg.relay_url}")
     log("Canvas: dat MUSE_API_BASE=http://"
-        f"{cfg.host}:{cfg.port} (giu nguyen MUSE_API_KEY cu)")
+        f"{cfg.host}:{actual_port} (giu nguyen MUSE_API_KEY cu)")
+
+    # Kiem tra relay luc khoi dong (chi de log — relay ngu thi bridge van
+    # chay, request dau tien se danh thuc relay va retry theo
+    # RELAY_WAKE_DEADLINE).
+    if server.relay.health_check():
+        log("relay: ket noi OK")
+    else:
+        log("relay: chua toi duoc (co the dang ngu) — se tu ket noi lai "
+            "khi co task")
 
     def _shutdown(signum, _frame):
         log(f"nhan signal {signum}, dang tat bridge...")
@@ -1163,6 +1383,26 @@ def main(argv: list | None = None) -> int:
 
     signal.signal(signal.SIGINT, _shutdown)
     signal.signal(signal.SIGTERM, _shutdown)
+
+    def _parent_watchdog():
+        """Tu tat khi app (tien trinh cha) thoat. Chi chay khi app truyen
+        --parent-pid (ban dong goi). Khong dung getppid()==1 de tranh
+        tat nham khi bridge duoc chay standalone bang nohup."""
+        if not cfg.parent_pid:
+            return
+        while True:
+            time.sleep(2)
+            try:
+                os.kill(cfg.parent_pid, 0)
+            except OSError:
+                log(f"tien trinh cha (pid {cfg.parent_pid}) da thoat, "
+                    "tat bridge")
+                break
+            except Exception:
+                continue
+        threading.Thread(target=server.shutdown, daemon=True).start()
+
+    threading.Thread(target=_parent_watchdog, daemon=True).start()
     try:
         server.serve_forever(poll_interval=0.5)
     finally:
