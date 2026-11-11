@@ -34,7 +34,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
     const locale = i18n.resolvedLanguage as AppLocale;
     const localeCycle: AppLocale[] = ["vi-VN", "en-US", "zh-CN"];
     const index = localeCycle.indexOf(locale);
-    const nextLocale = localeCycle[(index + 1) % localeCycle.length];
+    const nextLocale: AppLocale = localeCycle[(index + 1) % localeCycle.length] ?? "vi-VN";
     const localeKeys: Record<AppLocale, string> = {
         "vi-VN": "locale.viVN",
         "en-US": "locale.enUS",
