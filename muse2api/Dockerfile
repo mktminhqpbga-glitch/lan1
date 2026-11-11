@@ -39,4 +39,8 @@ VOLUME ["/app/data"]
 
 EXPOSE 18610
 
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "18610"]
+# Render cung cấp cổng qua biến môi trường PORT (không cố định 18610).
+# --proxy-headers: Render kết thúc TLS ở proxy phía trước, app cần đọc
+# X-Forwarded-* để biết đúng scheme/host. Uvicorn tự tắt khi nhận SIGTERM
+# từ Render nên deploy/redeploy an toàn.
+CMD ["sh", "-c", "exec python -m uvicorn app:app --host 0.0.0.0 --port ${PORT:-18610} --proxy-headers --forwarded-allow-ips='*'"]

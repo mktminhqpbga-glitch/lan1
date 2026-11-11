@@ -1,0 +1,30 @@
+# Muse2API on Render — Blueprint (gói Free)
+# Chỉ triển khai muse2api (không kèm canvas). Xem DEPLOY_RENDER.md để biết
+# giới hạn của gói Free, chi phí gói trả phí và quy trình kiểm thử.
+services:
+  - type: web
+    name: muse2api
+    runtime: docker
+    branch: deploy/render-muse2api
+    plan: free
+    region: singapore
+    dockerfilePath: ./muse2api/Dockerfile
+    dockerContext: ./muse2api
+    healthCheckPath: /healthz
+    envVars:
+      # Render tự sinh một khóa ngẫu nhiên khi áp dụng Blueprint lần đầu và
+      # giữ nguyên qua các lần deploy sau. KHÔNG ghi khóa vào repo.
+      # Đọc khóa tại: Render Dashboard → service muse2api → Environment.
+      - key: MUSE2API_KEY
+        generateValue: true
+      - key: MUSE2API_HOME
+        value: /app
+      # Gói Free chỉ có 512 MB RAM: giới hạn 1 tác vụ Chromium cùng lúc.
+      - key: MUSE2API_CONCURRENCY
+        value: "1"
+      - key: MUSE2API_IMAGE_TIMEOUT
+        value: "240"
+      - key: MUSE2API_VIDEO_TIMEOUT
+        value: "600"
+      - key: PYTHONUNBUFFERED
+        value: "1"

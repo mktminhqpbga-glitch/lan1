@@ -1,0 +1,8 @@
+# Không bao giờ đưa dữ liệu runtime của máy local (tài khoản, cookie, media)
+# vào Docker image. Repo đã gitignore data/, đây là lớp bảo vệ thứ hai.
+data/
+__pycache__/
+*.pyc
+.venv/
+.env
+*.log
