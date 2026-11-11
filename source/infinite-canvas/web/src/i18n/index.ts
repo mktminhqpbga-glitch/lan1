@@ -23,6 +23,12 @@ i18n.use(initReactI18next).init({
     react: { useSuspense: false },
 });
 
+// Đồng bộ thuộc tính lang khi chuyển ngôn ngữ để hỗ trợ trợ năng.
+i18n.on("languageChanged", (locale) => {
+    document.documentElement.lang = locale;
+});
+document.documentElement.lang = i18n.resolvedLanguage || "vi-VN";
+
 export function changeAppLocale(locale: AppLocale) {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
     return i18n.changeLanguage(locale);
