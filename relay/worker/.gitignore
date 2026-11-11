@@ -1,0 +1,6 @@
+# Worker local state — không commit: config thật, journal, file kết quả.
+.env
+worker-journal.json
+worker-journal.json.tmp
+results/
+__pycache__/

@@ -1,0 +1,30 @@
+# Muse Relay on Render — Blueprint (gói Free)
+# Chỉ chạy relay nhẹ (FastAPI, hàng đợi task). Không Chromium, không muse2api.
+# Xem relay/README.md để biết giới hạn gói Free và cách phục hồi task.
+services:
+  - type: web
+    name: muse-relay
+    runtime: docker
+    branch: deploy/muse-relay
+    plan: free
+    region: singapore
+    dockerfilePath: ./relay/Dockerfile
+    dockerContext: ./relay
+    healthCheckPath: /healthz
+    envVars:
+      # Render tự sinh hai khóa riêng khi áp dụng Blueprint lần đầu và giữ
+      # nguyên qua các lần deploy sau. KHÔNG ghi khóa vào repo.
+      # Đọc khóa tại: Render Dashboard → service muse-relay → Environment.
+      # RELAY_CANVAS_KEY → bridge trên Mac; RELAY_WORKER_KEY → worker máy ảo.
+      - key: RELAY_CANVAS_KEY
+        generateValue: true
+      - key: RELAY_WORKER_KEY
+        generateValue: true
+      - key: RELAY_DATA_DIR
+        value: /app/data
+      - key: RELAY_TASK_TTL_HOURS
+        value: "24"
+      - key: RELAY_MAX_MEDIA_MB
+        value: "2048"
+      - key: PYTHONUNBUFFERED
+        value: "1"
