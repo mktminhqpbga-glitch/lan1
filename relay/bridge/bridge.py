@@ -1206,18 +1206,25 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
             result = task.get("result") or {}
             media = task.get("result_media") or []
             url = None
-            if isinstance(result, dict):
+            # result_media la danh sach ten file chinh xac tu relay — uu tien.
+            if media:
+                name = str(media[0])
+                url = self.cfg.relay_url + "/v1/media/" + \
+                    urllib.parse.quote(name)
+            elif isinstance(result, dict):
                 for key in ("video_url", "result_url", "url"):
                     val = result.get(key)
                     if isinstance(val, str) and val:
                         url = val
                         break
-            if not url and media:
-                name = str(media[0])
-                url = self.cfg.relay_url + "/v1/media/" + \
-                    urllib.parse.quote(name)
-            if url and not url.startswith("http"):
-                url = self.cfg.relay_url + url
+                if url and not url.startswith("http"):
+                    if url.startswith("/"):
+                        url = self.cfg.relay_url + url
+                    else:
+                        # Ten file tran: worker rut gon local /v1/media URL
+                        # ve ten file khi upload ket qua.
+                        url = (self.cfg.relay_url + "/v1/media/" +
+                               urllib.parse.quote(url))
             self._send_json(200, self._video_task_shape(
                 task_id, "completed", 100, url=url))
             self._log(f"task={task_id} video completed url={url}")
