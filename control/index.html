@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI-Bridge Control Center</title>
+    <link rel="stylesheet" href="/control.css" />
+  </head>
+  <body>
+    <header>
+      <div class="mark">AB</div>
+      <div>
+        <h1>AI-Bridge <span>Control Center</span></h1>
+        <p>Chrome của bạn. Đúng Profile, đúng tác vụ.</p>
+      </div>
+      <span id="connection">Chưa xác thực</span>
+    </header>
+    <main>
+      <section id="unlock">
+        <h2>Kết nối API cục bộ</h2>
+        <p>
+          Nhập khóa API từ tệp được chỉ ra khi chạy server. Khóa chỉ giữ trong
+          bộ nhớ trang.
+        </p>
+        <form id="auth">
+          <label
+            >API key<input
+              id="key"
+              type="password"
+              required
+              autocomplete="off" /></label
+          ><button>Kết nối</button>
+        </form>
+      </section>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <div id="workspace" hidden>
+        <section>
+          <h2>Chrome Profiles</h2>
+          <p>
+            Ghép nối Extension trong từng Profile đang mở. Tên hiển thị do bạn
+            đặt; Bridge không đọc tên Profile của Chrome.
+          </p>
+          <div id="profiles" class="cards"></div>
+        </section>
+        <section>
+          <h2>Tab &amp; quyền xử lý</h2>
+          <p>
+            Đã phát hiện → Bạn cho phép → Đã có kết quả từ adapter. Thay đổi
+            trang sẽ thu hồi quyền; kết quả adapter chưa thay thế nghiệm thu
+            website thực tế.
+          </p>
+          <div class="table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Profile / tab</th>
+                  <th>Trang &amp; phiên</th>
+                  <th>Text</th>
+                  <th>Image</th>
+                  <th>Video</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="tabs"></tbody>
+            </table>
+          </div>
+        </section>
+        <section>
+          <h2>Gửi tác vụ</h2>
+          <form id="task">
+            <div class="row">
+              <label
+                >Loại<select id="kind">
+                  <option value="text">Text</option>
+                  <option value="image">Image</option>
+                  <option value="video">Video</option>
+                </select></label
+              ><label
+                >Profile / tab được cho phép<select
+                  id="target"
+                  required
+                ></select></label
+              ><button type="button" id="setDefault" class="secondary">
+                Đặt mặc định cho loại này
+              </button>
+            </div>
+            <label
+              >Prompt<textarea
+                id="prompt"
+                required
+                rows="4"
+                placeholder="Nội dung sẽ được gửi đúng một lần vào tab đã chọn"
+              ></textarea></label
+            ><button>Đưa vào hàng chờ</button>
+            <p class="muted">
+              Muse Image/Video đang thử nghiệm, chỉ xuất hiện khi adapter nhận
+              diện được chế độ đang chọn. Tải ảnh gốc cần liên kết tải hợp lệ;
+              chưa hỗ trợ tải ảnh tham chiếu/chỉnh sửa.
+            </p>
+          </form>
+        </section>
+        <section>
+          <h2>Hàng chờ &amp; lịch sử</h2>
+          <div class="table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Task</th>
+                  <th>Profile / tab</th>
+                  <th>Loại</th>
+                  <th>Trạng thái</th>
+                  <th>Kết quả</th>
+                </tr>
+              </thead>
+              <tbody id="tasks"></tbody>
+            </table>
+          </div>
+        </section>
+        <section>
+          <h2>Media đã xác minh</h2>
+          <p>Chỉ tệp vượt qua kiểm tra giải mã mới xuất hiện ở đây.</p>
+          <div id="media" class="cards"></div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      Local API · Chỉ loopback · Không xuất cookie · Không điều khiển cửa sổ
+      Chrome
+    </footer>
+    <dialog id="result">
+      <pre id="resultText"></pre>
+      <form method="dialog"><button>Đóng</button></form>
+    </dialog>
+    <script src="/control.js"></script>
+  </body>
+</html>

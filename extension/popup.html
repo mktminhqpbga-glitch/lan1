@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>AI Bridge</title>
+  </head>
+  <body>
+    <main>
+      <h1>AI Bridge</h1>
+      <p id="status">Connecting…</p>
+      <label
+        >Local bridge URL<input
+          id="serverUrl"
+          type="url"
+          placeholder="http://127.0.0.1:4317"
+      /></label>
+      <label
+        >Extension pairing token<input
+          id="token"
+          type="password"
+          autocomplete="off"
+      /></label>
+      <label
+        >Your name for this Chrome Profile<input
+          id="displayName"
+          placeholder="Profile 22"
+          maxlength="80"
+      /></label>
+      <p id="identity" class="hint"></p>
+      <div class="actions">
+        <button id="save" class="primary">Save &amp; connect</button
+        ><button id="pause">Pause</button>
+      </div>
+      <p class="hint">
+        Select existing tabs and capabilities in the local Control Center.
+        Reloaded tabs require fresh consent. This extension never opens,
+        switches or focuses a tab.
+      </p>
+      <p id="error" role="alert"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

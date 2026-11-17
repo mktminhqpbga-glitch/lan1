@@ -1,0 +1,23 @@
+{
+  "name": "ai-bridge",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "A local OpenAI-compatible bridge to AI chat tabs controlled by a Chrome extension.",
+  "scripts": {
+    "start": "node local-server.mjs",
+    "test": "node --test",
+    "format:check": "prettier --check local-server.mjs lib extension control test docs README.md package.json prompt-instructions.mjs tool-calls.mjs",
+    "format": "prettier --write local-server.mjs lib extension control test docs README.md package.json prompt-instructions.mjs tool-calls.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.2"
+  }
+}
